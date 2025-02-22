@@ -10,7 +10,7 @@ declare_id!("HnX2DaLiYakrugEev7oE3r7vugDUCZBV7zSntnDYBZoN");
 //                  a) Validate the Option Params Sent from OPX (This will be done on OPX as well)
 //                  b) Validate the on-chain Options Data (OCOD)
 //                  c) Send specific Error Codes back to OPX if OCOD Fails
-//                  d) If VoP passes --> write Create Options Program on-chain
+//                  d) If VoP passes --> write Create Options Program on-chain.
 // ==========================
 //
 // Considerations:
