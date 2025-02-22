@@ -33,6 +33,12 @@
             }
           },
           {
+            "name": "optionStatus",
+            "type": {
+              "defined": "OptionStatus"
+            }
+          },
+          {
             "name": "expiration",
             "type": "i64"
           }
@@ -163,6 +169,11 @@
         "code": 6004,
         "name": "OptionNotExpired",
         "msg": "Option has not yet expired."
+      },
+      {
+        "code": 6005,
+        "name": "OptionAlreadyExercised",
+        "msg": "Option has already been exercised."
       }
     ]
   }

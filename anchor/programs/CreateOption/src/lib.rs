@@ -9,36 +9,38 @@ mod create_option {
     use super::*;
 
     pub fn initialize_option(
-        ctx: Context<InitializeOption>,
-        strike_price: u64,
-        option_type: OptionType,
-        expiration: i64,
-    ) -> Result<()> {
-        let current_time = Clock::get()?.unix_timestamp as u64; // Cast current_time to u64
+    ctx: Context<InitializeOption>,
+    strike_price: u64,
+    option_type: OptionType,
+    option_status: OptionStatus, // This is the status passed at initialization
+    expiration: i64,
+) -> Result<()> {
+    let current_time = Clock::get()?.unix_timestamp as u64;
 
-        // Ensure the expiration is in the future
-        if expiration as u64 <= current_time {
-            return Err(ErrorCode::InvalidExpiration.into());
-        }
+    // Set the initial status from the argument
+    let option_account = &mut ctx.accounts.option_account;
+    option_account.status = option_status as u8; // Assign the provided status
 
-        let option_account = &mut ctx.accounts.option_account;
-
-        // Assign enum values as u8
-        option_account.strike_price = strike_price;
-        option_account.option_type = option_type as u8; // Convert enum OptionType to u8
-        option_account.owner = *ctx.accounts.owner.key;
-        option_account.expiration = expiration as u64; // Convert i64 to u64
-        option_account.status = OptionStatus::Active as u8; // Convert enum OptionStatus to u8
-        option_account.timestamp = current_time;
-
-        msg!("✅ Option contract initialized!");
-        msg!("🔹 Owner: {}", ctx.accounts.owner.key());
-        msg!("🔹 Strike Price: {} SOL", strike_price);
-        msg!("🔹 Option Type: {:?}", option_type);
-        msg!("🔹 Expiration: {}", expiration);
-
-        Ok(())
+    // Ensure the expiration is in the future
+    if expiration as u64 <= current_time {
+        return Err(ErrorCode::InvalidExpiration.into());
     }
+
+    option_account.strike_price = strike_price;
+    option_account.option_type = option_type as u8;
+    option_account.owner = *ctx.accounts.owner.key;
+    option_account.expiration = expiration as u64;
+    option_account.timestamp = current_time;
+
+    msg!("✅ Option contract initialized!");
+    msg!("🔹 Owner: {}", ctx.accounts.owner.key());
+    msg!("🔹 Strike Price: {} SOL", strike_price);
+    msg!("🔹 Option Type: {:?}", option_type);
+    msg!("🔹 Expiration: {}", expiration);
+
+    Ok(())
+}
+
 
     // Exercise an option: Owner can exercise an active option if conditions met
     pub fn exercise_option(ctx: Context<ExerciseOption>) -> Result<()> {
@@ -55,6 +57,11 @@ mod create_option {
             return Err(ErrorCode::OptionExpired.into());
         }
 
+        // Ensure the option has not already been exercised
+        if option_account.status == OptionStatus::Exercised as u8 {
+            return Err(ErrorCode::OptionAlreadyExercised.into());
+        }
+
         // Check if the owner is exercising the option
         if *ctx.accounts.owner.key != option_account.owner {
             return Err(ErrorCode::UnauthorizedExercise.into());
@@ -69,18 +76,21 @@ mod create_option {
         Ok(())
     }
 
-    // Expire an option: Option owner or another authority can expire the option
     pub fn expire_option(ctx: Context<ExpireOption>) -> Result<()> {
         let current_time = Clock::get()?.unix_timestamp as u64; // Get current time
         let option_account = &mut ctx.accounts.option_account;
 
-        // Log current status and expiration
+        // Log current status and expiration for debugging
         msg!("Current Time: {}", current_time);
         msg!("Option Expiration: {}", option_account.expiration);
         msg!("Option Status: {:?}", option_account.status);
 
         // Ensure the option is still active
         if option_account.status != OptionStatus::Active as u8 {
+            msg!(
+                "❌ Option is not active. Status: {:?}",
+                option_account.status
+            );
             return Err(ErrorCode::OptionNotActive.into());
         }
 
@@ -88,6 +98,12 @@ mod create_option {
         if option_account.expiration > current_time {
             msg!("❌ Option expiration check failed: Expiration time is in the future.");
             return Err(ErrorCode::OptionNotExpired.into());
+        }
+
+        // Ensure the option hasn't already been exercised (it cannot be expired if exercised)
+        if option_account.status == OptionStatus::Exercised as u8 {
+            msg!("❌ Option has already been exercised, cannot expire.");
+            return Err(ErrorCode::OptionAlreadyExercised.into());
         }
 
         // Mark option as expired
@@ -100,6 +116,7 @@ mod create_option {
 
         Ok(())
     }
+
 }
 
 #[derive(Accounts)]
@@ -169,4 +186,7 @@ pub enum ErrorCode {
 
     #[msg("Option has not yet expired.")]
     OptionNotExpired,
+
+    #[msg("Option has already been exercised.")]
+    OptionAlreadyExercised,
 }
