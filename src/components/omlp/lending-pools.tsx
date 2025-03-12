@@ -24,6 +24,20 @@ interface LendingPoolsProps {
   onFetchHistoricalData?: (token: string) => Promise<PoolHistoricalData[]>
 }
 
+/**
+ * Renders a card interface displaying a list of lending pools with details such as supply, APY, borrowed amounts, and utilization.
+ *
+ * This component calculates the total value locked (TVL) by summing the USD value of each pool's supply. It also
+ * provides interactive controls that allow users to toggle between USD and token display formats, refresh pool data,
+ * and open a chart to view historical data for a selected pool.
+ *
+ * @param pools - An array of lending pool objects to be displayed.
+ * @param isLoading - Indicates whether the pool data is currently loading.
+ * @param onRefresh - Optional callback invoked to refresh pool data.
+ * @param onFetchHistoricalData - Optional callback invoked to fetch historical data for a selected pool.
+ *
+ * @returns A React element that renders the lending pools interface.
+ */
 export function LendingPools({ 
   pools, 
   isLoading = false, 

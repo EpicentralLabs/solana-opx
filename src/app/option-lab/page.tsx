@@ -1,5 +1,12 @@
 import { OptionLabForm } from "@/components/option-lab/OptionLabForm"
 
+/**
+ * Renders the Option Lab page.
+ *
+ * This component displays a header with the title "Option Lab" and a description of its functionality related to creating, visualizing, and minting option contracts on Solana OPX. It also includes the OptionLabForm component for handling the contract operations.
+ *
+ * @returns The JSX content of the Option Lab page.
+ */
 export default function MintOptionPage() {
   return (
     <div className="container py-10 max-w-full">

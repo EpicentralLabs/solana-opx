@@ -55,6 +55,23 @@ interface CollateralProviderProps {
   hasPendingOptions?: boolean;
 }
 
+/**
+ * Renders a user interface for configuring collateral and leverage for opening an options trading position.
+ *
+ * This component computes the required collateral, fees (including borrow cost, creation fee, borrow fee, and transaction cost), 
+ * and potential profit based on user input and the provided option positions. It displays input fields for the collateral amount and type,
+ * controls for adjusting leverage, and a summary of associated costs. The component also notifies its parent via the onStateChange callback 
+ * whenever the calculated collateral state changes.
+ *
+ * @param options - Array of option positions used to determine collateral and premium requirements.
+ * @param onStateChange - Callback invoked with updated collateral state whenever relevant calculations change.
+ * @param onMint - Callback triggered when the user initiates the minting action.
+ * @param isSubmitting - Flag indicating whether a minting action is currently in progress.
+ * @param hasValidationError - Flag indicating whether there are any input validation errors.
+ * @param hasPendingOptions - Flag indicating if there are pending options available for minting.
+ *
+ * @returns A React element representing the collateral management interface.
+ */
 export function CollateralProvider({ 
   options, 
   onStateChange, 

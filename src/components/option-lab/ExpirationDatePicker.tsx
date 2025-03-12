@@ -14,6 +14,17 @@ const startDate = new Date(2025, 0, 1); // January 1st, 2025
 const endDate = new Date(2026, 0, 1);   // January 1st, 2026
 const allowedDates = getBiWeeklyDates(startDate, endDate);
 
+/**
+ * Generates an array of bi-weekly dates within a specified range.
+ *
+ * This function returns an array of Date objects, starting from the given start date and
+ * incrementing by 14 days until the end date is reached or surpassed. If the start date
+ * occurs after the end date, the function returns an empty array.
+ *
+ * @param startDate - The starting date for the sequence.
+ * @param endDate - The latest acceptable date in the sequence.
+ * @returns An array of Date objects representing bi-weekly intervals between the start and end dates.
+ */
 function getBiWeeklyDates(startDate: Date, endDate: Date): Date[] {
   const dates: Date[] = [];
   let currentDate = new Date(startDate);

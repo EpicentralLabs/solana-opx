@@ -45,21 +45,22 @@ function normalPDF(x: number): number {
 }
 
 /**
- * Calculates the price and Greeks (delta, gamma, theta, vega, rho) of an option using the Black-Scholes model.
- * 
- * This function computes the option price and its Greek values (sensitivity measures) based on the Black-Scholes formula.
- * It takes into account whether the option is a call or put, the strike price, spot price, time to expiry, volatility, 
- * and the risk-free interest rate.
- * 
- * @param params - The parameters required for option pricing.
- * @param params.isCall - A boolean indicating whether the option is a call (true) or put (false).
- * @param params.strikePrice - The strike price of the option.
- * @param params.spotPrice - The current spot price of the underlying asset.
- * @param params.timeUntilExpirySeconds - The time remaining until expiry in seconds.
- * @param params.volatility - The volatility of the underlying asset (as a decimal, e.g., 0.2 for 20%).
- * @param params.riskFreeRate - The annual risk-free interest rate (as a decimal, e.g., 0.05 for 5%).
- * @returns {OptionCalculation} - The calculated option price and Greeks.
- * 
+ * Calculates the option price and Greeks (delta, gamma, theta, vega, rho) using the Black-Scholes model.
+ *
+ * Given whether the option is a call or put, along with the strike and spot prices, time until expiry (in seconds),
+ * volatility, and the risk-free interest rate, this function computes the option price and its sensitivity measures.
+ * If the time until expiry is zero or negative, it returns zero for both the price and Greeks.
+ *
+ * @param params - The parameters for option pricing.
+ * @param params.isCall - Indicates if the option is a call (true) or a put (false).
+ * @param params.strikePrice - Strike price of the option.
+ * @param params.spotPrice - Current price of the underlying asset.
+ * @param params.timeUntilExpirySeconds - Time remaining until expiry in seconds.
+ * @param params.volatility - Volatility of the underlying asset (e.g., 0.2 for 20%).
+ * @param params.riskFreeRate - Annual risk-free interest rate (e.g., 0.05 for 5%).
+ *
+ * @returns The calculated option price and Greeks.
+ *
  * @example
  * const optionResult = calculateOption({
  *   isCall: true,
@@ -176,12 +177,15 @@ export function calculateOption(params: {
 }
 
 /**
- * Test function to run an option calculation using parameters from the Rust test case.
- * 
- * This function runs the `calculateOption` function with predefined test parameters to validate the option pricing and Greeks.
- * 
+ * Executes a test run of the Black-Scholes option pricing calculation.
+ *
+ * This function invokes `calculateOption` with a predefined set of parameters—derived from a Rust test case—to compute the option price and corresponding Greeks for a call option. It serves as a basic validation of the pricing logic.
+ *
  * @example
- * testCalculation();
+ * const result = testCalculation();
+ * // Access result.price and result.greeks to inspect the computed values.
+ *
+ * @returns An object containing the calculated option price and Greeks.
  */
 function testCalculation() {
   // Using the same values as in Rust test

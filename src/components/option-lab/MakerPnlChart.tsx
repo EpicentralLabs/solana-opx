@@ -75,6 +75,23 @@ const CustomTooltip = ({ active, payload, label, showExpiration }: any) => {
   );
 }
 
+/**
+ * Renders an interactive profit and loss (PnL) chart for options trading.
+ *
+ * This React component computes and visualizes the PnL profile for a set of option positions. It calculates
+ * data points over a range of asset prices by incorporating the premiums received, intrinsic option values at expiration,
+ * leverage on losses, and collateral limits. The chart, built with Recharts, features reference lines for maximum profit,
+ * maximum loss, the current market price, as well as strike prices for each option. If no option data is available, a message
+ * is displayed instead of the chart.
+ *
+ * @param options - Array of option positions used to compute the PnL, each including details such as strike price, premium, quantity, and option type.
+ * @param collateralProvided - The amount of collateral available, which also serves as the cap for potential losses.
+ * @param leverage - The multiplier applied to losses, amplifying negative outcomes.
+ * @param riskFreeRate - Optional risk-free rate for liquidation price calculations; defaults to 5% if not provided.
+ * @param assetPrice - Optional current asset price; if absent, the component uses the first option's strike price as a fallback.
+ *
+ * @returns A JSX element that renders the PnL chart or displays a message when no option data is available.
+ */
 export function MakerPnlChart({ 
   options, 
   collateralProvided, 
