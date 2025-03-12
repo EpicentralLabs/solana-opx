@@ -23,7 +23,7 @@ import {
   Legend, 
   ResponsiveContainer 
 } from 'recharts'
-import { cn } from '@/lib/misc/utils'
+import { cn } from '@/lib/utils'
 import React from 'react'
 
 // Custom DialogContent without the default close button
@@ -36,7 +36,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg card-glass backdrop-blur-sm bg-white/5 dark:bg-black/30 border-[#e5e5e5]/20 dark:border-white/5 transition-all duration-300 rounded-lg",
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 p-6 shadow-lg duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg card-glass backdrop-blur-sm bg-white/5 dark:bg-black/30 border-[#e5e5e5]/20 dark:border-white/5 transition-all rounded-lg",
         className
       )}
       {...props}
@@ -46,6 +46,13 @@ const DialogContent = React.forwardRef<
   </DialogPortal>
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
+
+export type PoolHistoricalData = {
+  timestamp: number // Unix timestamp
+  supplyApy: number
+  borrowApy: number
+  utilization: number
+}
 
 interface OmlpChartProps {
   open: boolean
@@ -58,48 +65,31 @@ interface OmlpChartProps {
     borrowApy: number
     utilization: number
   }
+  historicalData?: PoolHistoricalData[]
+  isLoading?: boolean
+  onChartOpen?: () => Promise<void>
 }
 
-export function OmlpChart({ open, onOpenChange, poolData }: OmlpChartProps) {
-  // Static historical data with more data points for smoother lines
-  const staticData = [
-    {
-      name: 'Jan',
-      supplyApy: 16.2,
-      borrowApy: 22.5,
-      utilization: 75.2
-    },
-    {
-      name: 'Feb',
-      supplyApy: 14.2,
-      borrowApy: 19.5,
-      utilization: 73.6
-    },
-    {
-      name: 'Mar',
-      supplyApy: 17.8,
-      borrowApy: 24.8,
-      utilization: 76.4
-    },
-    {
-      name: 'Apr',
-      supplyApy: 17.0,
-      borrowApy: 23.3,
-      utilization: 75.5
-    },
-    {
-      name: 'May',
-      supplyApy: 18.5,
-      borrowApy: 25.6,
-      utilization: 77.9
-    },
-    {
-      name: 'Jun',
-      supplyApy: 28.0,
-      borrowApy: 35.0,
-      utilization: 95.0 // Dramatic increase for visual effect
+export function OmlpChart({ 
+  open, 
+  onOpenChange, 
+  poolData,
+  historicalData = [],
+  isLoading = false,
+  onChartOpen
+}: OmlpChartProps) {
+  React.useEffect(() => {
+    if (open && onChartOpen) {
+      onChartOpen()
     }
-  ]
+  }, [open, onChartOpen])
+
+  const chartData = historicalData.map(data => ({
+    name: new Date(data.timestamp * 1000).toLocaleDateString('en-US', { month: 'short' }),
+    supplyApy: data.supplyApy,
+    borrowApy: data.borrowApy,
+    utilization: data.utilization
+  }))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -121,86 +111,96 @@ export function OmlpChart({ open, onOpenChange, poolData }: OmlpChartProps) {
         </DialogHeader>
         
         <div className="h-[400px] w-full mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={staticData}
-              margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 30,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-              <XAxis 
-                dataKey="name" 
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis 
-                orientation="left"
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `${value}%`}
-                domain={[0, 100]}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#111', 
-                  border: '1px solid #333',
-                  borderRadius: '8px',
-                  color: '#fff'
+          {isLoading ? (
+            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+              Loading historical data...
+            </div>
+          ) : chartData.length === 0 ? (
+            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+              No historical data available
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={chartData}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 30,
                 }}
-                formatter={(value) => [`${value}%`, '']}
-              />
-              <Legend />
-              <Line 
-                type="monotone"
-                dataKey="supplyApy" 
-                name="Supply APY" 
-                stroke="#4ade80" 
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-              <Line 
-                type="monotone"
-                dataKey="borrowApy" 
-                name="Borrow APY" 
-                stroke="#ef4444" 
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-              <Line 
-                type="monotone"
-                dataKey="utilization" 
-                name="Utilization" 
-                stroke="#4a85ff" 
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="#888888"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  orientation="left"
+                  stroke="#888888"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value}%`}
+                  domain={[0, 100]}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#111', 
+                    border: '1px solid #333',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  formatter={(value) => [`${value}%`, '']}
+                />
+                <Legend />
+                <Line 
+                  type="monotone"
+                  dataKey="supplyApy" 
+                  name="Supply APY" 
+                  stroke="#4ade80" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="borrowApy" 
+                  name="Borrow APY" 
+                  stroke="#ef4444" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="utilization" 
+                  name="Utilization" 
+                  stroke="#4a85ff" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
         
         <div className="mt-4 grid grid-cols-3 gap-4">
           <div className="rounded-lg bg-black/20 p-4 text-center">
             <div className="text-sm text-muted-foreground">Current Supply APY</div>
-            <div className="text-xl font-semibold text-green-500">28.0%</div>
+            <div className="text-xl font-semibold text-green-500">{poolData.supplyApy}%</div>
           </div>
           <div className="rounded-lg bg-black/20 p-4 text-center">
             <div className="text-sm text-muted-foreground">Current Borrow APY</div>
-            <div className="text-xl font-semibold text-red-500">35.0%</div>
+            <div className="text-xl font-semibold text-red-500">{poolData.borrowApy}%</div>
           </div>
           <div className="rounded-lg bg-black/20 p-4 text-center">
             <div className="text-sm text-muted-foreground">Current Utilization</div>
-            <div className="text-xl font-semibold text-blue-500">95.0%</div>
+            <div className="text-xl font-semibold text-blue-500">{poolData.utilization}%</div>
           </div>
         </div>
       </DialogContent>

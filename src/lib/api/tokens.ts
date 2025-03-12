@@ -1,3 +1,5 @@
+import { TOKENS as CONST_TOKENS } from '@/constants/token-list/tokens'
+
 export interface Token {
   address: string;
   decimals: number;
@@ -5,17 +7,4 @@ export interface Token {
   name: string;
 }
 
-export const TOKENS: { [key: string]: Token } = {
-  SOL: {
-    address: "So11111111111111111111111111111111111111112",
-    decimals: 9,
-    symbol: "SOL",
-    name: "Solana"
-  },
-  LABS: {
-    address: "LABSv1wQBPjF3urhHweumwmRYbf2VYkSdcKcz7vJz4T",
-    decimals: 9,
-    symbol: "LABS",
-    name: "Epicentral Labs"
-  }
-} 
+export const TOKENS: { [key: string]: Token } = CONST_TOKENS

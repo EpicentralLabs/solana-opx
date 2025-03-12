@@ -1,4 +1,4 @@
-import { calculateOption } from "@/lib/tests/option-calculator";
+import { calculateOption } from "@/lib/option-pricing-model/black-scholes-model";
 import { convertTimeToYears } from "@/utils/math/convertTimeToYears";
 
 const getExpectedValues = (optionType: "call" | "put") => {

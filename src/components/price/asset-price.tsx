@@ -25,7 +25,7 @@ export function AssetPrice({ asset }: { asset: string | undefined }) {
     }
 
     fetchPrice()
-    const interval = setInterval(fetchPrice, 60000)
+    const interval = setInterval(fetchPrice, 60000) 
     return () => clearInterval(interval)
   }, [asset])
 

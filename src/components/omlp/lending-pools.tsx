@@ -3,10 +3,10 @@
 import { Button } from '../ui/button'
 import { RefreshCw, DollarSign, Coins, BarChart } from 'lucide-react'
 import { useState } from 'react'
-import { cn } from '@/lib/misc/utils'
-import { OmlpChart } from './omlp-pool-chart'
+import { cn } from '@/lib/utils'
+import { OmlpChart, type PoolHistoricalData } from './omlp-pool-chart'
 
-type Pool = {
+export type Pool = {
   token: string
   supply: number
   supplyApy: number
@@ -17,36 +17,26 @@ type Pool = {
   tokenPrice: number
 }
 
-const mockPools: Pool[] = [
-  {
-    token: 'SOL',
-    supply: 892451,
-    supplyApy: 15.83,
-    borrowed: 723164,
-    borrowApy: 21.94,
-    utilization: ((723164 / 892451) * 100),
-    supplyLimit: 1000000,
-    tokenPrice: 95.42
-  },
-  {
-    token: 'LABS',
-    supply: 156732,
-    supplyApy: 28.64,
-    borrowed: 42891,
-    borrowApy: 35.17,
-    utilization: ((42891 / 156732) * 100),
-    supplyLimit: 200000,
-    tokenPrice: 1.23
-  }
-]
+interface LendingPoolsProps {
+  pools: Pool[]
+  isLoading?: boolean
+  onRefresh?: () => Promise<void>
+  onFetchHistoricalData?: (token: string) => Promise<PoolHistoricalData[]>
+}
 
-export function LendingPools() {
-  const [isRefreshing, setIsRefreshing] = useState(false)
+export function LendingPools({ 
+  pools, 
+  isLoading = false, 
+  onRefresh,
+  onFetchHistoricalData 
+}: LendingPoolsProps) {
   const [showUSD, setShowUSD] = useState(true)
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null)
   const [graphOpen, setGraphOpen] = useState(false)
+  const [historicalData, setHistoricalData] = useState<PoolHistoricalData[]>([])
+  const [isLoadingHistorical, setIsLoadingHistorical] = useState(false)
   
-  const tvl = mockPools.reduce((acc, pool) => {
+  const tvl = pools.reduce((acc, pool) => {
     const poolValueUSD = pool.supply * pool.tokenPrice
     return acc + poolValueUSD
   }, 0)
@@ -55,9 +45,10 @@ export function LendingPools() {
     return ((borrowed / supply) * 100).toFixed(2)
   }
 
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    setTimeout(() => setIsRefreshing(false), 1000)
+  const handleRefresh = async () => {
+    if (onRefresh) {
+      await onRefresh()
+    }
   }
 
   const formatValue = (value: number, tokenPrice: number, token: string) => {
@@ -70,6 +61,21 @@ export function LendingPools() {
   const handleOpenChart = (pool: Pool) => {
     setSelectedPool(pool)
     setGraphOpen(true)
+  }
+
+  const handleChartOpen = async () => {
+    if (selectedPool && onFetchHistoricalData) {
+      try {
+        setIsLoadingHistorical(true)
+        const data = await onFetchHistoricalData(selectedPool.token)
+        setHistoricalData(data)
+      } catch (error) {
+        console.error('Failed to fetch historical data:', error)
+        setHistoricalData([])
+      } finally {
+        setIsLoadingHistorical(false)
+      }
+    }
   }
 
   return (
@@ -106,11 +112,12 @@ export function LendingPools() {
             size="icon"
             className="h-8 w-8 p-0"
             onClick={handleRefresh}
+            disabled={isLoading}
           >
             <RefreshCw
               className={cn(
                 'h-4 w-4 text-muted-foreground',
-                isRefreshing && 'animate-spin'
+                isLoading && 'animate-spin'
               )}
             />
           </Button>
@@ -132,38 +139,52 @@ export function LendingPools() {
             </tr>
           </thead>
           <tbody>
-            {mockPools.map((pool, i) => (
-              <tr key={i} className="border-b last:border-0">
-                <td className="p-4">{pool.token}</td>
-                <td className="text-right p-4">
-                  {formatValue(pool.supply, pool.tokenPrice, pool.token)}
-                </td>
-                <td className="text-right p-4 text-green-500">{pool.supplyApy}%</td>
-                <td className="text-right p-4">
-                  {formatValue(pool.borrowed, pool.tokenPrice, pool.token)}
-                </td>
-                <td className="text-right p-4">{pool.borrowApy}%</td>
-                <td className="text-right p-4">
-                  {calculateUtilization(pool.borrowed, pool.supply)}%
-                </td>
-                <td className="text-right p-4">
-                  {formatValue(pool.supplyLimit, pool.tokenPrice, pool.token)}
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Button>Deposit</Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="bg-black hover:bg-black/80"
-                      onClick={() => handleOpenChart(pool)}
-                    >
-                      <BarChart className="h-4 w-4" />
-                    </Button>
-                  </div>
+            {isLoading ? (
+              <tr>
+                <td colSpan={8} className="text-center p-8 text-muted-foreground">
+                  Loading pools...
                 </td>
               </tr>
-            ))}
+            ) : pools.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="text-center p-8 text-muted-foreground">
+                  No pools available
+                </td>
+              </tr>
+            ) : (
+              pools.map((pool, i) => (
+                <tr key={i} className="border-b last:border-0">
+                  <td className="p-4">{pool.token}</td>
+                  <td className="text-right p-4">
+                    {formatValue(pool.supply, pool.tokenPrice, pool.token)}
+                  </td>
+                  <td className="text-right p-4 text-green-500">{pool.supplyApy}%</td>
+                  <td className="text-right p-4">
+                    {formatValue(pool.borrowed, pool.tokenPrice, pool.token)}
+                  </td>
+                  <td className="text-right p-4">{pool.borrowApy}%</td>
+                  <td className="text-right p-4">
+                    {calculateUtilization(pool.borrowed, pool.supply)}%
+                  </td>
+                  <td className="text-right p-4">
+                    {formatValue(pool.supplyLimit, pool.tokenPrice, pool.token)}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Button>Deposit</Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="bg-black hover:bg-black/80"
+                        onClick={() => handleOpenChart(pool)}
+                      >
+                        <BarChart className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -172,7 +193,10 @@ export function LendingPools() {
         <OmlpChart 
           open={graphOpen} 
           onOpenChange={setGraphOpen} 
-          poolData={selectedPool} 
+          poolData={selectedPool}
+          historicalData={historicalData}
+          isLoading={isLoadingHistorical}
+          onChartOpen={handleChartOpen}
         />
       )}
     </div>

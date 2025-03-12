@@ -65,5 +65,4 @@ export const EXPIRATION_DATES: ExpirationDate[] = [
   { value: '2025-04-25', label: formatExpirationDate('2025-04-25'), isMonthly: true },
   { value: '2025-05-01', label: formatExpirationDate('2025-05-01'), isMonthly: false },
   { value: '2025-05-09', label: formatExpirationDate('2025-05-09'), isMonthly: true }
-  // Add more dates as needed
 ]

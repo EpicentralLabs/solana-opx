@@ -3,31 +3,30 @@
 import { Button } from '../ui/button'
 import { RefreshCw } from 'lucide-react'
 import { useState } from 'react'
-import { cn } from '@/lib/misc/utils'
+import { cn } from '@/lib/utils'
 
-type Position = {
+export type Position = {
   token: string
   amount: number
   apy: number
   earned: number
 }
 
-const mockPositions: Position[] = [
-  {
-    token: 'SOL',
-    amount: 231.29,
-    apy: 30.21,
-    earned: 0.11,
-  },
-]
+interface MyLendingPositionsProps {
+  positions: Position[]
+  isLoading?: boolean
+  onRefresh?: () => Promise<void>
+}
 
-export function MyLendingPositions() {
-  const [isRefreshing, setIsRefreshing] = useState(false)
-
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    setTimeout(() => setIsRefreshing(false), 1000)
+export function MyLendingPositions({ positions, isLoading = false, onRefresh }: MyLendingPositionsProps) {
+  const handleRefresh = async () => {
+    if (onRefresh) {
+      await onRefresh()
+    }
   }
+
+  const totalValue = positions.reduce((acc, pos) => acc + pos.amount, 0)
+  const totalEarned = positions.reduce((acc, pos) => acc + pos.earned, 0)
 
   return (
     <div className="card-glass backdrop-blur-sm bg-white/5 dark:bg-black/30 border-[#e5e5e5]/20 dark:border-white/5 transition-all duration-300 rounded-lg shadow">
@@ -35,21 +34,22 @@ export function MyLendingPositions() {
         <h2 className="text-lg font-semibold">My Lendings / Collateral</h2>
         <div className="flex items-center gap-4">
           <span className="text-sm" style={{ color: '#4a85ff' }}>
-            TVL: ${mockPositions.reduce((acc, pos) => acc + pos.amount, 0).toFixed(2)}
+            TVL: ${totalValue.toFixed(2)}
           </span>
           <span className="text-sm" style={{ color: '#4a85ff' }}>
-            Total earned: ${mockPositions.reduce((acc, pos) => acc + pos.earned, 0).toFixed(2)}
+            Total earned: ${totalEarned.toFixed(2)}
           </span>
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 p-0"
             onClick={handleRefresh}
+            disabled={isLoading}
           >
             <RefreshCw
               className={cn(
                 'h-4 w-4 text-muted-foreground',
-                isRefreshing && 'animate-spin'
+                isLoading && 'animate-spin'
               )}
             />
           </Button>
@@ -68,18 +68,32 @@ export function MyLendingPositions() {
             </tr>
           </thead>
           <tbody>
-            {mockPositions.map((position, i) => (
-              <tr key={i} className="border-b last:border-0">
-                <td className="p-4">{position.token}</td>
-                <td className="text-right p-4">${position.amount.toFixed(2)}</td>
-                <td className="text-right p-4">{position.apy.toFixed(2)}%</td>
-                <td className="text-right p-4 text-green-500">${position.earned.toFixed(2)}</td>
-                <td className="p-4 flex justify-end gap-2">
-                  <Button variant="outline">Withdraw</Button>
-                  <Button>Deposit</Button>
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="text-center p-8 text-muted-foreground">
+                  Loading positions...
                 </td>
               </tr>
-            ))}
+            ) : positions.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center p-8 text-muted-foreground">
+                  No active lending positions
+                </td>
+              </tr>
+            ) : (
+              positions.map((position, i) => (
+                <tr key={i} className="border-b last:border-0">
+                  <td className="p-4">{position.token}</td>
+                  <td className="text-right p-4">${position.amount.toFixed(2)}</td>
+                  <td className="text-right p-4">{position.apy.toFixed(2)}%</td>
+                  <td className="text-right p-4 text-green-500">${position.earned.toFixed(2)}</td>
+                  <td className="p-4 flex justify-end gap-2">
+                    <Button variant="outline">Withdraw</Button>
+                    <Button>Deposit</Button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
