@@ -18,6 +18,18 @@ interface MyLendingPositionsProps {
   onRefresh?: () => Promise<void>
 }
 
+/**
+ * Renders a card displaying lending and collateral positions.
+ *
+ * The component shows a summary of the total value and total earned from the positions.
+ * It conditionally displays a loading message when data is being fetched, or a message indicating
+ * no active lending positions if the positions array is empty. A refresh button is provided to
+ * optionally trigger an asynchronous update via the onRefresh callback.
+ *
+ * @param positions - Array of lending positions.
+ * @param isLoading - Optional flag indicating if the positions data is loading (defaults to false).
+ * @param onRefresh - Optional callback function to asynchronously refresh the positions data.
+ */
 export function MyLendingPositions({ positions, isLoading = false, onRefresh }: MyLendingPositionsProps) {
   const handleRefresh = async () => {
     if (onRefresh) {

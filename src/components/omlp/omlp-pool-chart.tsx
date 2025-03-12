@@ -70,6 +70,21 @@ interface OmlpChartProps {
   onChartOpen?: () => Promise<void>
 }
 
+/**
+ * Renders a dialog containing a responsive line chart that visualizes historical pool performance data.
+ *
+ * When the dialog is open, this component optionally triggers the onChartOpen callback. It processes the provided
+ * historical data by mapping Unix timestamps to abbreviated month labels and displaying trends for supply APY, borrow APY,
+ * and utilization. If the data is still loading or unavailable, it shows appropriate feedback messages. The dialog also
+ * displays current pool performance metrics from the poolData object.
+ *
+ * @param open - Indicates whether the dialog is currently open.
+ * @param onOpenChange - Callback to update the dialog's open state.
+ * @param poolData - Object containing current pool performance information including the token name, supply APY, borrow APY, and utilization.
+ * @param historicalData - Optional array of historical data entries, where each entry includes a Unix timestamp and corresponding APY and utilization values.
+ * @param isLoading - Optional flag that, when true, displays a loading state for the historical data.
+ * @param onChartOpen - Optional callback that is invoked when the dialog opens.
+ */
 export function OmlpChart({ 
   open, 
   onOpenChange, 

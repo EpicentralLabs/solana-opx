@@ -51,6 +51,16 @@ const formSchema = z.object({
     .max(100, { message: "Quantity must be at most 100" })
 });
 
+/**
+ * Renders an interactive form for creating and managing option trading orders.
+ *
+ * The component integrates with React Hook Form and Zod to handle input validation and form state.
+ * It performs real-time option premium calculations using external pricing utilities and debouncing logic,
+ * automatically updates the asset price at regular intervals, and manages a list of pending option orders.
+ * On submission, it constructs option order objects and navigates to the trade page.
+ *
+ * @returns The option trading form component.
+ */
 export function OptionLabForm() {
   const router = useRouter();
   const { publicKey } = useWallet();

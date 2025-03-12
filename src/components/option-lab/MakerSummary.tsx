@@ -19,6 +19,21 @@ export interface MakerSummaryProps {
   assetPrice?: number | null;
 }
 
+/**
+ * Renders a summary card for options trading positions.
+ *
+ * This component computes and displays key financial metrics including the total premium,
+ * position size, maximum potential profit, maximum potential loss, and liquidation thresholds.
+ * If no options are provided, it shows a prompt to add options.
+ *
+ * @param options - An array of option positions to be summarized.
+ * @param onRemoveOption - Callback to remove an option from the summary.
+ * @param collateralProvided - The collateral amount used to compute the position size and maximum loss.
+ * @param leverage - The leverage multiplier applied to the position.
+ * @param assetPrice - The current price of the underlying asset; used to compute liquidation prices. Defaults to null.
+ *
+ * @returns A JSX element that renders the options trading summary.
+ */
 export function MakerSummary({ 
   options, 
   onRemoveOption,

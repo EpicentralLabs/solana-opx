@@ -24,6 +24,15 @@ type ChartContextProps = {
 
 const ChartContext = React.createContext<ChartContextProps | null>(null)
 
+/**
+ * Retrieves the current chart configuration context.
+ *
+ * This hook returns the chart configuration set by the surrounding <ChartContainer />. It throws an error if used outside of a chart container.
+ *
+ * @returns The chart configuration context.
+ *
+ * @throws {Error} When called outside of a <ChartContainer />.
+ */
 function useChart() {
   const context = React.useContext(ChartContext)
 
@@ -316,7 +325,16 @@ const ChartLegendContent = React.forwardRef<
 )
 ChartLegendContent.displayName = "ChartLegend"
 
-// Helper to extract item config from a payload.
+/**
+ * Extracts a configuration value from the given chart configuration using a key that may be overridden by the payload.
+ *
+ * The function checks if the provided payload is a valid object and then looks for a string value associated with the specified key. It first inspects the payload directly and, if not found, checks within a nested `payload` property. If an override key is found, it is used to retrieve the corresponding value from the configuration; otherwise, the original key is used.
+ *
+ * @param config - Chart configuration object mapping keys to configuration values.
+ * @param payload - Data that may contain a string override for the configuration key.
+ * @param key - The base key to look up in the configuration. If an override exists in the payload, that value replaces the base key.
+ * @returns The configuration value corresponding to the resolved key, or undefined if the payload is not a valid object.
+ */
 function getPayloadConfigFromPayload(
   config: ChartConfig,
   payload: unknown,

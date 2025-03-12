@@ -7,6 +7,15 @@ import { LendingPools, type Pool } from './lending-pools'
 import { type PoolHistoricalData } from './omlp-pool-chart'
 import { useState, useEffect } from 'react'
 
+/**
+ * Renders the Option Margin Lending Pool interface.
+ *
+ * This React component displays lending pool and user lending position data once a wallet is connected.
+ * It manages local state and asynchronous data fetching for both pools and positions, and passes refresh
+ * callbacks to child components. If no wallet is connected, it prompts the user to connect their wallet.
+ *
+ * @returns A React element representing the Option Margin Lending Pool feature.
+ */
 export function OMLPFeature() {
   const { publicKey } = useWallet()
   const [pools, setPools] = useState<Pool[]>([])
