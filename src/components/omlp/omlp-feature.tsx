@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { mockPoolData, mockPositions, mockHistoricalData } from '@/constants/omlp/test-accounts'
 import { calculateUtilization, calculateSupplyAPY, calculateBorrowAPY } from '@/constants/omlp/calculations'
 import { toast } from 'sonner'
+import { getTokenPrice } from '@/lib/api/getTokenPrice'
 
 // Dynamically import the WalletButton with SSR disabled to prevent hydration issues
 const WalletButton = dynamic(
@@ -23,15 +24,20 @@ export function OMLPFeature() {
   const [isLoadingPools, setIsLoadingPools] = useState(true)
   const [isLoadingPositions, setIsLoadingPositions] = useState(true)
 
-  // Fetch pools using mock data for testing
+  // Fetch pools with real SOL price data
   const fetchPools = async () => {
     try {
       setIsLoadingPools(true)
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Get real SOL price
+      const solPriceData = await getTokenPrice('SOL')
       
-      // Use the mock data but recalculate utilization and APYs using our formulas
+      // Update the mock data with real SOL price
       const updatedPools = mockPoolData.map(pool => {
+        if (pool.token === 'SOL') {
+          // Update SOL token price with real data
+          pool.tokenPrice = solPriceData.price
+        }
+        
         const utilization = calculateUtilization(pool.borrowed, pool.supply)
         return {
           ...pool,
@@ -49,12 +55,10 @@ export function OMLPFeature() {
     }
   }
 
-  // Fetch positions using mock data for testing
+  // Fetch positions with empty data initially
   const fetchPositions = async () => {
     try {
       setIsLoadingPositions(true)
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
       setPositions(mockPositions)
     } catch (error) {
       console.error('Failed to fetch positions:', error)
@@ -63,10 +67,8 @@ export function OMLPFeature() {
     }
   }
 
-  // Fetch historical data using mock data for testing
+  // Fetch historical data with empty data initially
   const fetchHistoricalData = async (token: string): Promise<PoolHistoricalData[]> => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
     return mockHistoricalData[token as keyof typeof mockHistoricalData] || []
   }
 
@@ -81,7 +83,7 @@ export function OMLPFeature() {
       
       // Find the token's pool and price safely
       const targetPool = pools.find(p => p.token === token)
-      const tokenPrice = targetPool?.tokenPrice || 1
+      const tokenPrice = targetPool?.tokenPrice || (token === 'USDC' ? 1 : 0)
       const poolApy = targetPool?.supplyApy || 0
       
       // Update the pools after successful deposit

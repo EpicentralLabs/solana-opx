@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Dialog, 
   DialogContent, 
@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { getTokenPrice } from '@/lib/api/getTokenPrice'
 
 interface DepositDialogProps {
   open: boolean
@@ -37,9 +38,32 @@ export function DepositDialog({
   const [amount, setAmount] = useState<string>('')
   const [isDepositing, setIsDepositing] = useState(false)
   const [sliderValue, setSliderValue] = useState([25])
+  const [currentTokenPrice, setCurrentTokenPrice] = useState(tokenPrice)
   
   // Mock maximum token balance
   const maxTokenBalance = token === 'SOL' ? 10 : token === 'USDC' ? 1000 : 100000
+
+  // Update current token price when dialog opens
+  useEffect(() => {
+    if (open) {
+      // Use the passed tokenPrice, but also fetch latest price if possible
+      setCurrentTokenPrice(tokenPrice)
+      
+      const updatePrice = async () => {
+        try {
+          // For SOL, try to get latest price
+          if (token === 'SOL') {
+            const solPriceData = await getTokenPrice('SOL')
+            setCurrentTokenPrice(solPriceData.price)
+          }
+        } catch (error) {
+          console.error('Failed to get latest token price:', error)
+        }
+      }
+      
+      updatePrice()
+    }
+  }, [open, token, tokenPrice])
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -70,8 +94,6 @@ export function DepositDialog({
       if (onDeposit) {
         await onDeposit(parseFloat(amount))
       }
-      // Simulate successful deposit
-      await new Promise(resolve => setTimeout(resolve, 1500))
       onOpenChange(false)
       setAmount('')
       setSliderValue([25])
@@ -82,8 +104,9 @@ export function DepositDialog({
     }
   }
 
-  const dollarValue = parseFloat(amount || '0') * tokenPrice
-  const estimatedAPY = (parseFloat(amount || '0') * supplyApy) / 100
+  // Calculate USD value using the real-time token price
+  const dollarValue = parseFloat(amount || '0') * currentTokenPrice
+  const estimatedAPY = (dollarValue * supplyApy) / 100
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -91,7 +114,7 @@ export function DepositDialog({
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Deposit {token}</DialogTitle>
           <DialogDescription>
-            Provide liquidity to the {token} pool and earn {supplyApy}% APY
+            Provide liquidity to the {token} pool and earn {supplyApy.toFixed(2)}% APY
           </DialogDescription>
         </DialogHeader>
         
@@ -121,7 +144,7 @@ export function DepositDialog({
               </Button>
             </div>
             <div className="text-xs text-muted-foreground text-right">
-              ≈ ${dollarValue.toFixed(2)} USD
+              ≈ ${dollarValue.toFixed(2)} USD (@ ${currentTokenPrice.toFixed(2)})
             </div>
           </div>
           
