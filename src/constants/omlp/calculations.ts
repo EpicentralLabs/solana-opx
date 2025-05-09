@@ -1,3 +1,5 @@
+import { SUPPLY_APY_PARAMS, BORROW_APY_PARAMS, COLLATERAL_PARAMS } from './config-omlp';
+
 /**
  * Calculates the utilization rate of a pool
  * @param borrowed The amount borrowed from the pool
@@ -15,10 +17,8 @@ export function calculateUtilization(borrowed: number, supply: number): number {
  * @returns The supply APY as a percentage
  */
 export function calculateSupplyAPY(utilization: number): number {
-  // Base rate plus a factor based on utilization
-  const baseRate = 1.0;
-  const utilizationFactor = 0.05;
-  return baseRate + (utilization * utilizationFactor);
+  const { baseRate, utilizationFactor, protocolSpread } = SUPPLY_APY_PARAMS;
+  return baseRate + (utilization * utilizationFactor) - protocolSpread;
 }
 
 /**
@@ -27,15 +27,18 @@ export function calculateSupplyAPY(utilization: number): number {
  * @returns The borrow APY as a percentage
  */
 export function calculateBorrowAPY(utilization: number): number {
-  // Base rate plus a factor based on utilization
-  // As utilization increases, borrowing becomes more expensive
-  const baseRate = 3.0;
-  const utilizationFactor = 0.08;
+  const { 
+    baseRate, 
+    utilizationFactor, 
+    protocolSpread,
+    highUtilizationThreshold,
+    highUtilizationPremiumFactor
+  } = BORROW_APY_PARAMS;
   
-  // Additional premium when utilization gets high
-  const highUtilizationPremium = utilization > 80 ? (utilization - 80) * 0.2 : 0;
+  const highUtilizationPremium = utilization > highUtilizationThreshold ? 
+    (utilization - highUtilizationThreshold) * highUtilizationPremiumFactor : 0;
   
-  return baseRate + (utilization * utilizationFactor) + highUtilizationPremium;
+  return baseRate + (utilization * utilizationFactor) + highUtilizationPremium + protocolSpread;
 }
 
 /**
@@ -76,7 +79,7 @@ export function calculateMaxBorrowAmount(
   collateralAmount: number,
   collateralPrice: number,
   borrowTokenPrice: number,
-  ltv: number = 0.7 // Default LTV of 70%
+  ltv: number = COLLATERAL_PARAMS.defaultLTV
 ): number {
   const collateralValue = collateralAmount * collateralPrice;
   const maxBorrowValue = collateralValue * ltv;
@@ -97,7 +100,7 @@ export function calculateHealthFactor(
   collateralPrice: number,
   borrowedAmount: number,
   borrowedPrice: number,
-  liquidationThreshold: number = 0.8 // Default liquidation threshold of 80%
+  liquidationThreshold: number = COLLATERAL_PARAMS.liquidationThreshold
 ): number {
   const collateralValue = collateralAmount * collateralPrice;
   const borrowedValue = borrowedAmount * borrowedPrice;

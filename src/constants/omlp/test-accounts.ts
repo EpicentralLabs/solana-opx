@@ -1,5 +1,6 @@
 import { type Position } from '@/components/omlp/my-lending-positions';
 import { type PoolHistoricalData } from '@/components/omlp/omlp-pool-chart';
+import { POOL_SUPPLY_LIMITS, DEFAULT_TOKEN_PRICES } from './config-omlp';
 
 // Mock pool data for testing OMLP
 export const mockPoolData = [
@@ -10,8 +11,8 @@ export const mockPoolData = [
     borrowed: 0,
     borrowApy: 0,
     utilization: 0,
-    supplyLimit: 10000,
-    tokenPrice: 0, // Will be updated with real price
+    supplyLimit: POOL_SUPPLY_LIMITS.SOL,
+    tokenPrice: DEFAULT_TOKEN_PRICES.SOL,
   },
   {
     token: "USDC",
@@ -20,8 +21,8 @@ export const mockPoolData = [
     borrowed: 0,
     borrowApy: 0,
     utilization: 0,
-    supplyLimit: 100000,
-    tokenPrice: 1, // USDC is a stablecoin
+    supplyLimit: POOL_SUPPLY_LIMITS.USDC,
+    tokenPrice: DEFAULT_TOKEN_PRICES.USDC,
   }
 ];
 
