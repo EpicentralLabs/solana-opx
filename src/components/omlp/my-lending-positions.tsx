@@ -4,6 +4,7 @@ import { Button } from '../ui/button'
 import { RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { DepositDialog } from './deposit-dialog'
 
 export type Position = {
   token: string
@@ -16,12 +17,45 @@ interface MyLendingPositionsProps {
   positions: Position[]
   isLoading?: boolean
   onRefresh?: () => Promise<void>
+  onDeposit?: (token: string, amount: number) => Promise<void>
+  onWithdraw?: (token: string, amount: number) => Promise<void>
 }
 
-export function MyLendingPositions({ positions, isLoading = false, onRefresh }: MyLendingPositionsProps) {
+export function MyLendingPositions({ 
+  positions, 
+  isLoading = false, 
+  onRefresh,
+  onDeposit,
+  onWithdraw
+}: MyLendingPositionsProps) {
+  const [depositOpen, setDepositOpen] = useState(false)
+  const [selectedToken, setSelectedToken] = useState<string>('')
+  const [selectedApy, setSelectedApy] = useState<number>(0)
+  
   const handleRefresh = async () => {
     if (onRefresh) {
       await onRefresh()
+    }
+  }
+
+  const handleOpenDeposit = (token: string, apy: number) => {
+    setSelectedToken(token)
+    setSelectedApy(apy)
+    setDepositOpen(true)
+  }
+
+  const handleDeposit = async (amount: number) => {
+    if (onDeposit && selectedToken) {
+      await onDeposit(selectedToken, amount)
+    }
+  }
+
+  const handleWithdraw = async (token: string) => {
+    const position = positions.find(pos => pos.token === token)
+    if (position && onWithdraw) {
+      // In a real app, you would have a withdraw dialog with amount selection
+      // For simplicity, we'll just withdraw the full amount
+      await onWithdraw(token, position.amount)
     }
   }
 
@@ -88,8 +122,17 @@ export function MyLendingPositions({ positions, isLoading = false, onRefresh }: 
                   <td className="text-right p-4">{position.apy.toFixed(2)}%</td>
                   <td className="text-right p-4 text-green-500">${position.earned.toFixed(2)}</td>
                   <td className="p-4 flex justify-end gap-2">
-                    <Button variant="outline">Withdraw</Button>
-                    <Button>Deposit</Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => handleWithdraw(position.token)}
+                    >
+                      Withdraw
+                    </Button>
+                    <Button
+                      onClick={() => handleOpenDeposit(position.token, position.apy)}
+                    >
+                      Deposit
+                    </Button>
                   </td>
                 </tr>
               ))
@@ -97,6 +140,17 @@ export function MyLendingPositions({ positions, isLoading = false, onRefresh }: 
           </tbody>
         </table>
       </div>
+
+      {selectedToken && (
+        <DepositDialog
+          open={depositOpen}
+          onOpenChange={setDepositOpen}
+          token={selectedToken}
+          tokenPrice={1} // This would come from a token price oracle in a real implementation
+          supplyApy={selectedApy}
+          onDeposit={handleDeposit}
+        />
+      )}
     </div>
   )
 } 

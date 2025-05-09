@@ -5,6 +5,7 @@ import { RefreshCw, DollarSign, Coins, BarChart } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { OmlpChart, type PoolHistoricalData } from './omlp-pool-chart'
+import { DepositDialog } from './deposit-dialog'
 
 export type Pool = {
   token: string
@@ -22,17 +23,21 @@ interface LendingPoolsProps {
   isLoading?: boolean
   onRefresh?: () => Promise<void>
   onFetchHistoricalData?: (token: string) => Promise<PoolHistoricalData[]>
+  onDeposit?: (token: string, amount: number) => Promise<void>
 }
 
 export function LendingPools({ 
   pools, 
   isLoading = false, 
   onRefresh,
-  onFetchHistoricalData 
+  onFetchHistoricalData,
+  onDeposit
 }: LendingPoolsProps) {
   const [showUSD, setShowUSD] = useState(true)
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null)
   const [graphOpen, setGraphOpen] = useState(false)
+  const [depositOpen, setDepositOpen] = useState(false)
+  const [depositPool, setDepositPool] = useState<Pool | null>(null)
   const [historicalData, setHistoricalData] = useState<PoolHistoricalData[]>([])
   const [isLoadingHistorical, setIsLoadingHistorical] = useState(false)
   
@@ -61,6 +66,17 @@ export function LendingPools({
   const handleOpenChart = (pool: Pool) => {
     setSelectedPool(pool)
     setGraphOpen(true)
+  }
+
+  const handleOpenDeposit = (pool: Pool) => {
+    setDepositPool(pool)
+    setDepositOpen(true)
+  }
+
+  const handleDeposit = async (amount: number) => {
+    if (depositPool && onDeposit) {
+      await onDeposit(depositPool.token, amount)
+    }
   }
 
   const handleChartOpen = async () => {
@@ -158,11 +174,11 @@ export function LendingPools({
                   <td className="text-right p-4">
                     {formatValue(pool.supply, pool.tokenPrice, pool.token)}
                   </td>
-                  <td className="text-right p-4 text-green-500">{pool.supplyApy}%</td>
+                  <td className="text-right p-4 text-green-500">{pool.supplyApy.toFixed(2)}%</td>
                   <td className="text-right p-4">
                     {formatValue(pool.borrowed, pool.tokenPrice, pool.token)}
                   </td>
-                  <td className="text-right p-4">{pool.borrowApy}%</td>
+                  <td className="text-right p-4">{pool.borrowApy.toFixed(2)}%</td>
                   <td className="text-right p-4">
                     {calculateUtilization(pool.borrowed, pool.supply)}%
                   </td>
@@ -171,7 +187,7 @@ export function LendingPools({
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                      <Button>Deposit</Button>
+                      <Button onClick={() => handleOpenDeposit(pool)}>Deposit</Button>
                       <Button 
                         variant="outline" 
                         size="icon" 
@@ -197,6 +213,17 @@ export function LendingPools({
           historicalData={historicalData}
           isLoading={isLoadingHistorical}
           onChartOpen={handleChartOpen}
+        />
+      )}
+
+      {depositPool && (
+        <DepositDialog
+          open={depositOpen}
+          onOpenChange={setDepositOpen}
+          token={depositPool.token}
+          tokenPrice={depositPool.tokenPrice}
+          supplyApy={depositPool.supplyApy}
+          onDeposit={handleDeposit}
         />
       )}
     </div>

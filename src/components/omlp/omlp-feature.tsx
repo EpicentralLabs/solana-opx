@@ -1,11 +1,20 @@
 'use client'
 
 import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletButton } from '../wallet/wallet-button'
+import dynamic from 'next/dynamic'
 import { MyLendingPositions, type Position } from './my-lending-positions'
 import { LendingPools, type Pool } from './lending-pools'
 import { type PoolHistoricalData } from './omlp-pool-chart'
 import { useState, useEffect } from 'react'
+import { mockPoolData, mockPositions, mockHistoricalData } from '@/constants/omlp/test-accounts'
+import { calculateUtilization, calculateSupplyAPY, calculateBorrowAPY } from '@/constants/omlp/calculations'
+import { toast } from 'sonner'
+
+// Dynamically import the WalletButton with SSR disabled to prevent hydration issues
+const WalletButton = dynamic(
+  () => import('../wallet/wallet-button').then(mod => mod.WalletButton),
+  { ssr: false }
+)
 
 export function OMLPFeature() {
   const { publicKey } = useWallet()
@@ -14,14 +23,25 @@ export function OMLPFeature() {
   const [isLoadingPools, setIsLoadingPools] = useState(true)
   const [isLoadingPositions, setIsLoadingPositions] = useState(true)
 
-  // TODO: Replace with actual data fetching
+  // Fetch pools using mock data for testing
   const fetchPools = async () => {
     try {
       setIsLoadingPools(true)
-      // Add your actual data fetching logic here
-      // const response = await fetch('/api/pools')
-      // const data = await response.json()
-      // setPools(data)
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Use the mock data but recalculate utilization and APYs using our formulas
+      const updatedPools = mockPoolData.map(pool => {
+        const utilization = calculateUtilization(pool.borrowed, pool.supply)
+        return {
+          ...pool,
+          utilization,
+          supplyApy: calculateSupplyAPY(utilization),
+          borrowApy: calculateBorrowAPY(utilization)
+        }
+      })
+      
+      setPools(updatedPools)
     } catch (error) {
       console.error('Failed to fetch pools:', error)
     } finally {
@@ -29,15 +49,13 @@ export function OMLPFeature() {
     }
   }
 
-  // TODO: Replace with actual data fetching
+  // Fetch positions using mock data for testing
   const fetchPositions = async () => {
     try {
       setIsLoadingPositions(true)
-      // Add your actual data fetching logic here
-      // This should fetch positions for the connected wallet
-      // const response = await fetch(`/api/positions/${publicKey}`)
-      // const data = await response.json()
-      // setPositions(data)
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setPositions(mockPositions)
     } catch (error) {
       console.error('Failed to fetch positions:', error)
     } finally {
@@ -45,14 +63,101 @@ export function OMLPFeature() {
     }
   }
 
-  // TODO: Replace with actual historical data fetching
+  // Fetch historical data using mock data for testing
   const fetchHistoricalData = async (token: string): Promise<PoolHistoricalData[]> => {
-    // Add your actual historical data fetching logic here
-    // This should fetch historical APY and utilization data for the specified token
-    // const response = await fetch(`/api/pools/${token}/history`)
-    // const data = await response.json()
-    // return data
-    return []
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    return mockHistoricalData[token as keyof typeof mockHistoricalData] || []
+  }
+
+  // Handle deposits to the liquidity pool
+  const handleDeposit = async (token: string, amount: number) => {
+    try {
+      // In a real implementation, this would call a Solana program to deposit funds
+      console.log(`Depositing ${amount} ${token} to the liquidity pool`)
+      
+      // Simulate blockchain transaction
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Find the token's pool and price safely
+      const targetPool = pools.find(p => p.token === token)
+      const tokenPrice = targetPool?.tokenPrice || 1
+      const poolApy = targetPool?.supplyApy || 0
+      
+      // Update the pools after successful deposit
+      setPools(prevPools => 
+        prevPools.map(pool => 
+          pool.token === token 
+            ? { ...pool, supply: pool.supply + amount }
+            : pool
+        )
+      )
+      
+      // Add to user positions
+      const existingPosition = positions.find(pos => pos.token === token)
+      if (existingPosition) {
+        setPositions(prevPositions => 
+          prevPositions.map(pos => 
+            pos.token === token 
+              ? { ...pos, amount: pos.amount + (amount * tokenPrice) }
+              : pos
+          )
+        )
+      } else {
+        const newPosition = {
+          token,
+          amount: amount * tokenPrice,
+          apy: poolApy,
+          earned: 0
+        }
+        setPositions(prevPositions => [...prevPositions, newPosition])
+      }
+      
+      toast.success(`Successfully deposited ${amount} ${token} to the liquidity pool`)
+    } catch (error) {
+      console.error('Deposit failed:', error)
+      toast.error(`Failed to deposit: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  // Handle withdrawals from the liquidity pool
+  const handleWithdraw = async (token: string, amountUSD: number) => {
+    try {
+      // Find the token's pool and price safely
+      const targetPool = pools.find(p => p.token === token)
+      if (!targetPool) {
+        throw new Error(`Pool for ${token} not found`)
+      }
+      
+      // Convert USD amount to token amount
+      const tokenAmount = amountUSD / targetPool.tokenPrice
+      
+      console.log(`Withdrawing ${tokenAmount} ${token} from the liquidity pool (${amountUSD} USD)`)
+      
+      // In a real implementation, this would call a Solana program to withdraw funds
+      // Simulate blockchain transaction
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Update the pools after successful withdrawal
+      setPools(prevPools => 
+        prevPools.map(pool => 
+          pool.token === token 
+            ? { ...pool, supply: Math.max(0, pool.supply - tokenAmount) }
+            : pool
+        )
+      )
+      
+      // Remove from user positions
+      setPositions(prevPositions => {
+        const updatedPositions = prevPositions.filter(pos => pos.token !== token)
+        return updatedPositions
+      })
+      
+      toast.success(`Successfully withdrew ${tokenAmount.toFixed(4)} ${token} from the liquidity pool`)
+    } catch (error) {
+      console.error('Withdrawal failed:', error)
+      toast.error(`Failed to withdraw: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   // Initial fetch
@@ -85,7 +190,7 @@ export function OMLPFeature() {
           Option Margin Liquidity Pool
         </h1>
         <p className="text-center text-muted-foreground mt-2">
-          Lend tokens to provide liquidity for option market makers.
+          Lend tokens to provide liquidity for option market makers and earn interest.
         </p>
       </div>
       
@@ -93,12 +198,16 @@ export function OMLPFeature() {
         positions={positions}
         isLoading={isLoadingPositions}
         onRefresh={fetchPositions}
+        onDeposit={handleDeposit}
+        onWithdraw={handleWithdraw}
       />
+      
       <LendingPools 
         pools={pools}
         isLoading={isLoadingPools}
         onRefresh={fetchPools}
         onFetchHistoricalData={fetchHistoricalData}
+        onDeposit={handleDeposit}
       />
     </div>
   )
