@@ -158,27 +158,30 @@ export const OptionChainUtils: FC<OptionChainUtilsProps> = ({
     setIsRefreshing(true);
     
     try {
-      // Log the current options in localStorage
+      // Get current options from localStorage
       const mintedOptionsStr = localStorage.getItem('mintedOptions');
       if (mintedOptionsStr) {
         const mintedOptions = JSON.parse(mintedOptionsStr);
-        console.log('Current options in localStorage:', mintedOptions);
+        
+        // Filter out expired options
+        const now = new Date().getTime();
+        const validOptions = mintedOptions.filter((option: any) => {
+          const expiryDate = new Date(option.expiry).getTime();
+          return expiryDate > now;
+        });
+        
+        // Update localStorage with filtered options
+        localStorage.setItem('mintedOptions', JSON.stringify(validOptions));
+        
+        // Log the cleanup operation
+        console.log('Options cleaned up. Removed expired options.');
       }
-      
-      // Clean up options in localStorage
-      cleanupPendingOptions();
-      
-      // Refresh prices for all tokens in parallel
-      await Promise.all(
-        Object.keys(TOKENS).map(symbol => getTokenPrice(symbol))
-      );
       
       // Dispatch event to notify that options have been updated
       window.dispatchEvent(new CustomEvent('mintedOptionsUpdated'));
     } catch (error) {
-      console.error('Error refreshing token prices:', error);
+      console.error('Error refreshing options data:', error);
     } finally {
-      // Stop the refresh animation after all prices are fetched
       setIsRefreshing(false);
     }
   };

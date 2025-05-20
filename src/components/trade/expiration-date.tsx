@@ -20,30 +20,68 @@ const ExpirationDateSelectorComponent: FC<ExpirationDateSelectorProps> = ({
   onExpirationChange,
   expirationDates = EMPTY_EXPIRATION_DATES
 }) => {
-  // Add a state to track if hydration is complete
   const [isHydrated, setIsHydrated] = useState(false)
+  const [filteredDates, setFilteredDates] = useState(expirationDates)
   
-  // Set hydration flag after component mounts (client-side only)
+  // Set hydration flag after component mounts
   useEffect(() => {
     setIsHydrated(true)
   }, [])
-  
-  // Handle expiration date selection change
+
+  // Handle expiration date selection change - declare this before using in useEffect
   const handleExpirationChange = useCallback((expiration: string) => {
     onExpirationChange(expiration)
   }, [onExpirationChange])
-  
-  // Default to the first available date only after hydration is complete
+
+  // Filter out expired dates
   useEffect(() => {
-    if (isHydrated && expirationDates.length > 0 && !selectedExpiration) {
-      // Use setTimeout to push this to the next event loop after hydration
+    const now = new Date().getTime()
+    const validDates = expirationDates.filter(date => {
+      const expiryDate = new Date(date.value).getTime()
+      return expiryDate > now
+    })
+    setFilteredDates(validDates)
+
+    // If current selected date is expired, select the first valid date
+    if (selectedExpiration) {
+      const selectedDate = new Date(selectedExpiration).getTime()
+      if (selectedDate <= now && validDates.length > 0) {
+        handleExpirationChange(validDates[0].value)
+      }
+    }
+  }, [expirationDates, selectedExpiration, handleExpirationChange])
+
+  // Listen for mintedOptionsUpdated events
+  useEffect(() => {
+    const handleOptionsUpdate = () => {
+      const now = new Date().getTime()
+      const validDates = expirationDates.filter(date => {
+        const expiryDate = new Date(date.value).getTime()
+        return expiryDate > now
+      })
+      setFilteredDates(validDates)
+
+      // Update selected date if expired
+      if (selectedExpiration) {
+        const selectedDate = new Date(selectedExpiration).getTime()
+        if (selectedDate <= now && validDates.length > 0) {
+          handleExpirationChange(validDates[0].value)
+        }
+      }
+    }
+
+    window.addEventListener('mintedOptionsUpdated', handleOptionsUpdate)
+    return () => window.removeEventListener('mintedOptionsUpdated', handleOptionsUpdate)
+  }, [expirationDates, selectedExpiration, handleExpirationChange])
+  
+  useEffect(() => {
+    if (isHydrated && filteredDates.length > 0 && !selectedExpiration) {
       const timer = setTimeout(() => {
-        handleExpirationChange(expirationDates[0].value)
+        handleExpirationChange(filteredDates[0].value)
       }, 0)
-      
       return () => clearTimeout(timer)
     }
-  }, [expirationDates, selectedExpiration, handleExpirationChange, isHydrated])
+  }, [filteredDates, selectedExpiration, handleExpirationChange, isHydrated])
 
   return (
     <div className="flex items-center space-x-2">
@@ -57,8 +95,8 @@ const ExpirationDateSelectorComponent: FC<ExpirationDateSelectorProps> = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[180px]" align="end">
-          {expirationDates.length > 0 ? (
-            expirationDates.map((date) => (
+          {filteredDates.length > 0 ? (
+            filteredDates.map((date) => (
               <DropdownMenuItem
                 key={date.value}
                 onClick={() => handleExpirationChange(date.value)}
