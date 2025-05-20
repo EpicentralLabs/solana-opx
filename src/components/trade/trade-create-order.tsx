@@ -7,8 +7,16 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { useAssetPriceInfo } from '@/context/asset-price-provider'
+import { useWallet } from '@solana/wallet-adapter-react'
 import Image from 'next/image'
 import { optionsAvailabilityTracker } from './option-data'
+import dynamic from 'next/dynamic'
+
+// Dynamically import wallet button with ssr disabled to prevent hydration mismatch
+const WalletButton = dynamic(
+  () => import('../solana/user-wallet/wallet-button').then(mod => mod.WalletButton),
+  { ssr: false }
+)
 
 // Define minimum quantity constant
 const MIN_QTY = 0.1 // 1/10th contract
@@ -29,6 +37,7 @@ export const CreateOrder: FC<CreateOrderProps> = ({
   onUpdateQuantity,
   onUpdateLimitPrice
 }) => {
+  const { publicKey } = useWallet()
   // Initialize with empty objects using stable identifiers
   const [orderTypes, setOrderTypes] = useState<Record<LegKey, 'MKT' | 'LMT'>>({});
   const [inputValues, setInputValues] = useState<Record<LegKey, string>>({});
@@ -318,7 +327,14 @@ export const CreateOrder: FC<CreateOrderProps> = ({
           </div>
         </div>
 
-        {selectedOptions.length === 0 ? (
+        {!publicKey ? (
+          <div className="min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center gap-4 py-4">
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Connect wallet to create options orders
+            </p>
+            <WalletButton />
+          </div>
+        ) : selectedOptions.length === 0 ? (
           <div className="min-h-[80px] sm:min-h-[100px] flex items-center justify-center text-muted-foreground text-sm sm:text-base">
             <p>Select options from the chain above to build your order</p>
           </div>
