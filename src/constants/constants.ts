@@ -77,13 +77,7 @@ export const DEFAULT_OPTION_OPEN_INTEREST = 0;
 export const MAX_OPTION_LEGS = 4;
 
 // Test expiration dates array for development
-export const EMPTY_EXPIRATION_DATES: ExpirationDate[] = [
-  {
-    value: "2025-05-07",
-    label: "May 7th, 2025",
-    isMonthly: true
-  }
-];
+export const EMPTY_EXPIRATION_DATES: ExpirationDate[] = [];
 
 // Option formatting constants
 export const OPTION_POSITION_TYPE = {
