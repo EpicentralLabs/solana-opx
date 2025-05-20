@@ -28,9 +28,10 @@ interface MyLendingPositionsProps {
   positions: Position[]
   isLoading?: boolean
   onRefresh?: () => Promise<void>
+  emptyContent?: React.ReactNode
 }
 
-export function MyLendingPositions({ positions, isLoading = false, onRefresh }: MyLendingPositionsProps) {
+export function MyLendingPositions({ positions, isLoading = false, onRefresh, emptyContent }: MyLendingPositionsProps) {
   const { deposit, withdraw, isDepositing, isWithdrawing } = useOmlpService()
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false)
   const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false)
@@ -154,11 +155,13 @@ export function MyLendingPositions({ positions, isLoading = false, onRefresh }: 
                   </td>
                 </tr>
               ) : positions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center p-8 text-muted-foreground">
-                    No active lending positions
-                  </td>
-                </tr>
+                emptyContent || (
+                  <tr>
+                    <td colSpan={5} className="text-center p-8 text-muted-foreground">
+                      No active lending positions
+                    </td>
+                  </tr>
+                )
               ) : (
                 positions.map((position, i) => (
                   <tr key={i} className="border-b last:border-0">

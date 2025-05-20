@@ -35,20 +35,19 @@ export function OMLPFeature() {
     await refetchPositions()
   }, [refetchPositions])
 
-  if (!publicKey) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
-        <div className="flex flex-col items-center gap-6">
-          <p className="text-lg text-muted-foreground">
-            Connect wallet to access Option Margin Liquidity Pool
+  // Custom content to display when wallet is not connected
+  const walletConnectContent = !publicKey ? (
+    <tr>
+      <td colSpan={5} className="text-center p-8">
+        <div className="flex flex-col items-center gap-4 py-4">
+          <p className="text-muted-foreground">
+            Connect wallet to access your lending positions
           </p>
-          <div className="flex justify-center">
-            <WalletButton />
-          </div>
+          <WalletButton />
         </div>
-      </div>
-    )
-  }
+      </td>
+    </tr>
+  ) : null
 
   return (
     <div className="container max-w-6xl mx-auto py-10 space-y-8">
@@ -65,7 +64,9 @@ export function OMLPFeature() {
         positions={positions}
         isLoading={isLoadingPositions}
         onRefresh={handleRefreshPositions}
+        emptyContent={walletConnectContent}
       />
+      
       <LendingPools 
         pools={pools}
         isLoading={isLoadingPools}
