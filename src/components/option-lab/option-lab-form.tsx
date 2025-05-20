@@ -114,6 +114,9 @@ export function OptionLabForm() {
   // Get asset price from context
   const { price: assetPrice, priceChange: priceChangeDirection } = useAssetPriceInfo(selectedAsset);
 
+  // Check if wallet is connected
+  const isWalletConnected = !!publicKey;
+
   // State for collateral information
   const [collateralState, setCollateralState] = useState<CollateralState>({
     hasEnoughCollateral: false,
@@ -557,6 +560,7 @@ export function OptionLabForm() {
                   isSubmitting={isSubmitting}
                   hasValidationError={!!methods.formState.errors.root}
                   hasPendingOptions={pendingOptions.length > 0}
+                  isWalletConnected={isWalletConnected}
                 />
               </div>
             </div>

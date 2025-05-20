@@ -54,6 +54,7 @@ interface CollateralProviderProps {
   isSubmitting?: boolean;
   hasValidationError?: boolean;
   hasPendingOptions?: boolean;
+  isWalletConnected?: boolean;
 }
 
 export function CollateralProvider({ 
@@ -62,7 +63,8 @@ export function CollateralProvider({
   onMint, 
   isSubmitting = false, 
   hasValidationError = false,
-  hasPendingOptions = false
+  hasPendingOptions = false,
+  isWalletConnected = false
 }: CollateralProviderProps) {
   const baseCollateralNeeded = calculateCollateralNeeded(options);
   const minCollateralRequired = calculateMinCollateralRequired(baseCollateralNeeded, MAX_LEVERAGE);
@@ -436,6 +438,7 @@ export function CollateralProvider({
             disabled:hover:scale-100 rounded-md"
           onClick={onMint}
           disabled={
+            !isWalletConnected ||
             !isEnoughCollateral || 
             options.length === 0 || 
             isSubmitting || 
@@ -443,7 +446,7 @@ export function CollateralProvider({
             !hasPendingOptions
           }
         >
-          {isSubmitting ? "Minting..." : "Mint Option"}
+          {isSubmitting ? "Minting..." : isWalletConnected ? "Mint Option" : "Connect Wallet to Mint Option"}
         </Button>
       </CardContent>
     </Card>
